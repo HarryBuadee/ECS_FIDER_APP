@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fider
+      POSTGRES_PASSWORD: fider_pw
+      POSTGRES_DB: fider
+    ports:
+      - "5555:5432"
+    volumes:
+      - fider_db:/var/lib/postgresql/data
+
+  smtp:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  app:
+    image: fider-app:local
+    restart: unless-stopped
+    depends_on:
+      - db
+      - smtp
+    environment:
+      BASE_URL: http://localhost
+      DATABASE_URL: postgres://fider:fider_pw@db:5432/fider?sslmode=disable
+      JWT_SECRET: change-this-to-a-long-random-secret
+      EMAIL_NOREPLY: noreply@example.com
+      EMAIL_SMTP_HOST: smtp
+      EMAIL_SMTP_PORT: 1025
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  fider_db:

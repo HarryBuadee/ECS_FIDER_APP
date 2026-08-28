@@ -60,6 +60,13 @@ COPY --from=ui-builder /ui/dist /app/dist
 COPY --from=ui-builder /ui/robots.txt /app
 COPY --from=ui-builder /ui/ssr.js /app
 
+RUN groupadd --system fider \
+    && useradd --system --gid fider --home-dir /app fider \
+    && chown -R fider:fider /app
+
+USER fider
+
+
 EXPOSE 3000
 
 HEALTHCHECK --timeout=5s CMD ./fider ping
