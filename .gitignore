@@ -42,3 +42,7 @@ crash.*.log
 # Terraform local plan files
 tfplan
 final-plan*.txt
+
+# Local AWS IAM setup files
+github-actions-deploy-policy.json
+github-oidc-trust-policy.json
