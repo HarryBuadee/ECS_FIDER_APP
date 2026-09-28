@@ -27,3 +27,18 @@ fider_schema.sql
 fider.sql
 .zed/debug.json
 WARP.md
+
+
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars
+
+# Terraform local plan files
+tfplan
+final-plan*.txt
