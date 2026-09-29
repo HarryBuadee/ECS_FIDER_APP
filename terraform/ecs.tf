@@ -5,14 +5,11 @@
 resource "aws_ecs_cluster" "fider" {
   name = "Fider-Cluster"
 
-
   configuration {
     execute_command_configuration {
       logging = "DEFAULT"
     }
   }
-
-
 
   tags = {
     Name = "Fider-Cluster"
@@ -51,6 +48,18 @@ resource "aws_ecs_task_definition" "fider" {
         {
           name  = "BASE_URL"
           value = "https://${var.domain_name}"
+        },
+        {
+          name  = "EMAIL_SMTP_HOST"
+          value = "email-smtp.eu-west-2.amazonaws.com"
+        },
+        {
+          name  = "EMAIL_SMTP_PORT"
+          value = "587"
+        },
+        {
+          name  = "EMAIL_NOREPLY"
+          value = "noreply@example.com"
         }
       ]
 
@@ -93,9 +102,6 @@ resource "aws_ecs_service" "fider" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-
-
-
   enable_ecs_managed_tags           = true
   health_check_grace_period_seconds = 60
 
@@ -103,6 +109,7 @@ resource "aws_ecs_service" "fider" {
     enable   = true
     rollback = true
   }
+
   network_configuration {
     subnets = [
       aws_subnet.public_subnet_1.id,
@@ -125,6 +132,14 @@ resource "aws_ecs_service" "fider" {
   depends_on = [
     aws_lb_listener.https
   ]
+
+  # GitHub Actions manages which task definition revision
+  # is deployed to the ECS service.
+  lifecycle {
+    ignore_changes = [
+      task_definition
+    ]
+  }
 
   tags = {
     Name = "fider-service"
