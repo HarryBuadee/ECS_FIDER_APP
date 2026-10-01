@@ -13,29 +13,34 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /server
 WORKDIR /server
 
-COPY go.mod go.sum ./
+COPY fider/go.mod fider/go.sum ./
+
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY . ./
+COPY fider/ ./
 
 ARG COMMITHASH
 ARG VERSION
+
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     COMMITHASH=${COMMITHASH} VERSION=${VERSION} GOOS=${TARGETOS} GOARCH=${TARGETARCH} make build-server
+
 #################
 ### UI Build Step
 #################
-FROM --platform=${TARGETPLATFORM:-linux/amd64} node:22-bookworm AS ui-builder 
+FROM --platform=${TARGETPLATFORM:-linux/amd64} node:22-bookworm AS ui-builder
 
 WORKDIR /ui
 
-COPY package.json package-lock.json ./
+COPY fider/package.json fider/package-lock.json ./
+
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --maxsockets 1
 
-COPY . .
+COPY fider/ ./
+
 RUN make build-ssr
 RUN make build-ui
 
@@ -65,7 +70,6 @@ RUN groupadd --system fider \
     && chown -R fider:fider /app
 
 USER fider
-
 
 EXPOSE 3000
 
