@@ -55,7 +55,7 @@ AWS IAM
 
 ## Project Overview
 
-The objective of this project was to take a real open-source application and implement a production-style AWS deployment lifecycle.
+The aim of this project was to take a real open-source application and implement a production-style AWS deployment lifecycle.
 
 The project covers:
 
