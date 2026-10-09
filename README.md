@@ -20,11 +20,9 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 - [Infrastructure as Code](#infrastructure-as-code)
 - [CI/CD pipeline](#cicd-pipeline)
 - [Monitoring and health checks](#monitoring-and-health-checks)
-- [Troubleshooting and lessons learned](#troubleshooting-and-lessons-learned)
 - [Local development](#local-development)
 - [Deployment verification](#deployment-verification)
 - [Screenshots](#screenshots)
-- [Future improvements](#future-improvements)
 - [Skills demonstrated](#skills-demonstrated)
 - [Upstream application](#upstream-application)
 
