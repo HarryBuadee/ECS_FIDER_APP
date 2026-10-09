@@ -57,14 +57,13 @@ resource "aws_iam_role_policy" "ecs_secrets" {
 
         Resource = [
           aws_secretsmanager_secret.jwt_secret.arn,
-          data.aws_secretsmanager_secret.database_url.arn
+          data.aws_secretsmanager_secret.database_url.arn,
+          data.aws_secretsmanager_secret.smtp_password.arn
         ]
-
       }
     ]
   })
 }
-
 
 
 
