@@ -32,25 +32,11 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 
 ### Runtime
 
-```[Architecture Diagram](./images/fideronawsdiagaram.png)
-```
+![Fider AWS Architecture Diagram](./images/fideronawsdiagaram.png)
+
 
 ### Deployment
 
-```mermaid
-flowchart LR
-    dev(["git push to main"]) --> gh["GitHub Actions"]
-    gh -->|"OIDC token"| iam["AWS IAM<br/>deployment role"]
-    iam -->|"temporary credentials"| build
-
-    subgraph pipeline ["Pipeline steps"]
-        direction TB
-        build["Build Docker image<br/>tagged with commit SHA"] --> ecr["Push to Amazon ECR"]
-        ecr --> td["Register new ECS<br/>task definition revision"]
-        td --> svc["Update ECS service<br/>and wait for stability"]
-        svc --> hc["Production health check<br/>/_health"]
-    end
-```
 
 ## What this project covers
 
