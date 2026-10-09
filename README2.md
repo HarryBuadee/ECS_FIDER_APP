@@ -32,26 +32,7 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 
 ### Runtime
 
-```mermaid
-flowchart LR
-    user(["Internet users"]) --> r53["Route 53<br/>fider.harrydev.net"]
-    r53 --> alb
-
-    subgraph vpc ["AWS VPC"]
-        direction LR
-        subgraph pub ["Public subnets (2 AZs)"]
-            alb["Application Load Balancer<br/>HTTP 80 redirects to HTTPS 443<br/>ACM certificate"]
-            ecs["ECS Fargate<br/>Fider on port 3000"]
-        end
-        subgraph priv ["Private DB subnets"]
-            rds[("RDS PostgreSQL")]
-        end
-    end
-
-    alb -->|"TCP 3000"| ecs
-    ecs -->|"TCP 5432"| rds
-    sm["Secrets Manager"] -.->|"DATABASE_URL, JWT_SECRET"| ecs
-    ecs -.->|"/ecs/fider"| cw["CloudWatch Logs"]
+```[Architecture Diagram](./images/fideronawsdiagaram.png)
 ```
 
 ### Deployment
