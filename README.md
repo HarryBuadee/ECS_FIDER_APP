@@ -34,9 +34,6 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 
 ![Fider AWS Architecture Diagram](./Images/fideronawsdiagaram.png)
 
-
-
-
 ## What this project covers
 
 - Running Fider locally with Docker
@@ -112,14 +109,6 @@ The application runs in a custom VPC containing:
 - An Internet Gateway and public route table
 - Separate security groups for the ALB, ECS tasks and RDS
 
-Security groups restrict traffic layer by layer, so the database is never exposed to the internet:
-
-```mermaid
-flowchart LR
-    net(["Internet"]) -->|"80, 443"| a["ALB<br/>security group"]
-    a -->|"TCP 3000"| e["ECS<br/>security group"]
-    e -->|"TCP 5432"| r["RDS<br/>security group"]
-```
 
 ### Amazon ECS / Fargate
 
@@ -246,14 +235,6 @@ Without this, a later `terraform apply` could roll the service back to an older 
 
 A green pipeline therefore means more than "an image was pushed": the new deployment is reachable and reporting healthy.
 
-## Troubleshooting and lessons learned
-
-| Problem | Symptom | Root cause and fix |
-| --- | --- | --- |
-| ECS task failed after deployment | `Essential container in task exited`, exit code 2 | CloudWatch Logs showed `failed to parse environment variables` and a missing `EMAIL_NOREPLY`. Comparing the working task definition with Terraform revealed the missing Fider email variables, which were then added to the Terraform task definition. Lesson: read the application logs before assuming an infrastructure fault. |
-| GitHub OIDC authentication failed | `Not authorized to perform sts:AssumeRoleWithWebIdentity` | The IAM trust relationship did not allow the GitHub repository identity. After correcting the trust policy, the workflow obtained temporary credentials without stored keys. |
-| Terraform and CI/CD task definition drift | Terraform detected a different task revision than its baseline | Once the pipeline registered its own revisions, Terraform saw drift. Adding `ignore_changes = [task_definition]` separated infrastructure lifecycle from application release lifecycle. |
-
 ## Local development
 
 The local stack runs Fider, PostgreSQL, MailHog and an NGINX reverse proxy.
@@ -317,19 +298,6 @@ aws ecs describe-services \
 
 ### Terraform Plan
 ![Terraform Plan](./Images/terraform-plan.png)
-
-## Future improvements
-
-These are planned, not yet implemented:
-
-- [ ] Run ECS tasks in private subnets with controlled outbound connectivity
-- [ ] Add ECS Service Auto Scaling
-- [ ] Introduce remote Terraform state with locking
-- [ ] Manage the GitHub OIDC IAM resources with Terraform
-- [ ] Add infrastructure security scanning and container vulnerability scanning to CI
-- [ ] Add automated application and integration tests before production deployment
-- [ ] Add CloudWatch alarms with SNS notifications
-- [ ] Move to blue/green deployments
 
 ## Skills demonstrated
 
