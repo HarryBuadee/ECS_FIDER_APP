@@ -1,385 +1,223 @@
+# Fider on AWS ECS: Terraform & CI/CD
 
-# Fider on AWS ECS — Terraform & CI/CD
+![AWS](https://img.shields.io/badge/AWS-ECS%20Fargate-FF9900?logo=amazonaws&logoColor=white)
+![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?logo=terraform&logoColor=white)
+![Docker](https://img.shields.io/badge/Container-Docker-2496ED?logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/DB-RDS%20PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-A production-style deployment of the open-source **Fider** feedback platform on AWS, built to demonstrate practical DevOps and cloud engineering skills using **Docker, Terraform, Amazon ECS/Fargate, RDS PostgreSQL, Application Load Balancer, Route 53, HTTPS, GitHub Actions and AWS OIDC authentication**.
+A production-style deployment of the open-source [Fider](https://github.com/getfider/fider) feedback platform on AWS. It covers the full lifecycle: local Docker, manual AWS deployment, Infrastructure as Code with Terraform, and an automated CI/CD pipeline that builds and ships every push to `main` to Amazon ECS Fargate using keyless GitHub OIDC authentication.
 
-The project started with running Fider locally using Docker and progressed through manual AWS deployment, Infrastructure as Code with Terraform, and finally an automated CI/CD pipeline that builds and deploys new application versions to Amazon ECS.
+**Live:** https://fider.harrydev.net
+
+## Contents
+
+- [Architecture](#architecture)
+- [What this project covers](#what-this-project-covers)
+- [Technology stack](#technology-stack)
+- [Repository structure](#repository-structure)
+- [AWS infrastructure](#aws-infrastructure)
+- [Infrastructure as Code](#infrastructure-as-code)
+- [CI/CD pipeline](#cicd-pipeline)
+- [Monitoring and health checks](#monitoring-and-health-checks)
+- [Troubleshooting and lessons learned](#troubleshooting-and-lessons-learned)
+- [Local development](#local-development)
+- [Deployment verification](#deployment-verification)
+- [Screenshots](#screenshots)
+- [Future improvements](#future-improvements)
+- [Skills demonstrated](#skills-demonstrated)
+- [Upstream application](#upstream-application)
 
 ## Architecture
 
-```text
-                         Internet
-                            |
-                            v
-                  Route 53 DNS
-                fider.harrydev.net
-                            |
-                            v
-                    HTTPS / TLS
-                       AWS ACM
-                            |
-                            v
-              Application Load Balancer
-                    HTTP 80 -> 443
-                            |
-                            v
-                    ECS / Fargate
-                      Fider App
-                      Port 3000
-                            |
-                            v
-                   RDS PostgreSQL
-                  Private DB Subnets
+### Runtime and Deployment
+
+![Fider AWS Architecture Diagram](./Images/fideronawsdiagaram.png)
 
 
-GitHub
-   |
-   | Push to main
-   v
-GitHub Actions
-   |
-   | OIDC Authentication
-   v
-AWS IAM
-   |
-   +----> Docker Build
-   |
-   +----> Amazon ECR
-   |
-   +----> ECS Task Definition
-   |
-   +----> ECS Service Deployment
-   |
-   +----> Production Health Check
-```
 
-## Project Overview
 
-The aim of this project was to take a real open-source application and implement a production-style AWS deployment lifecycle.
-
-The project covers:
+## What this project covers
 
 - Running Fider locally with Docker
-- Containerising the application
-- Deploying the application to Amazon ECS using Fargate
-- Storing container images in Amazon ECR
-- Using Amazon RDS PostgreSQL for the application database
-- Placing the application behind an Application Load Balancer
-- Configuring HTTPS using AWS Certificate Manager
-- Configuring a custom domain using Route 53
-- Managing AWS infrastructure using Terraform
-- Storing sensitive application configuration in AWS Secrets Manager
-- Sending application logs to CloudWatch
-- Implementing automated deployments using GitHub Actions
-- Authenticating GitHub Actions to AWS using OIDC rather than long-lived AWS access keys
-- Performing a production health check after deployment
+- Containerising the application and storing images in Amazon ECR
+- Deploying to Amazon ECS on Fargate behind an Application Load Balancer
+- Amazon RDS PostgreSQL in private subnets
+- HTTPS with AWS Certificate Manager and a custom domain on Route 53
+- Application secrets in AWS Secrets Manager and logs in CloudWatch
+- Managing the infrastructure with Terraform
+- Automated deployments with GitHub Actions
+- Keyless AWS authentication from GitHub using OIDC instead of long-lived access keys
+- A post-deployment production health check
 
-## Technology Stack
+## Technology stack
 
 | Technology | Purpose |
-|---|---|
-| AWS ECS | Container orchestration |
-| AWS Fargate | Serverless container compute |
+| --- | --- |
+| AWS ECS / Fargate | Container orchestration and serverless compute |
 | Amazon ECR | Docker image registry |
-| Amazon RDS | PostgreSQL database |
-| Application Load Balancer | Application traffic distribution |
-| AWS Certificate Manager | TLS certificate management |
-| Route 53 | DNS management |
+| Amazon RDS (PostgreSQL) | Application database |
+| Application Load Balancer | Public entry point and traffic distribution |
+| AWS Certificate Manager | TLS certificate |
+| Route 53 | DNS |
 | AWS Secrets Manager | Application secrets |
 | CloudWatch Logs | Container logging |
-| AWS IAM | AWS permissions and workload identity |
+| AWS IAM | Permissions and workload identity |
 | Terraform | Infrastructure as Code |
-| Docker | Application containerisation |
-| GitHub Actions | CI/CD automation |
-| GitHub OIDC | Keyless AWS authentication |
-| PostgreSQL | Application database |
+| Docker | Containerisation |
+| GitHub Actions + OIDC | CI/CD and keyless AWS authentication |
 | NGINX | Local reverse proxy |
 
-## Repository Structure
+## Repository structure
 
 ```text
 ECS_FIDER_APP/
-|
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-|
-├── fider/
-│   ├── app/
-│   ├── docs/
-│   ├── e2e/
-│   ├── locale/
-│   ├── migrations/
-│   ├── public/
-│   ├── scripts/
-│   ├── static/
-│   ├── views/
-│   ├── docker-compose.yml
-│   ├── go.mod
-│   ├── package.json
-│   ├── LICENSE
-│   └── README.md
-|
+├── .github/workflows/
+│   └── deploy.yml            # CI/CD pipeline
+├── fider/                    # Upstream Fider source (see Upstream application)
 ├── terraform/
-│   ├── acm.tf
-│   ├── alb.tf
-│   ├── cloudwatch.tf
-│   ├── ecr.tf
-│   ├── ecs.tf
-│   ├── iam.tf
+│   ├── acm.tf                # TLS certificate
+│   ├── alb.tf                # Load balancer, target group, listeners
+│   ├── cloudwatch.tf         # Log group
+│   ├── ecr.tf                # Image repository
+│   ├── ecs.tf                # Cluster, task definition, service
+│   ├── iam.tf                # ECS roles and permissions
 │   ├── outputs.tf
-│   ├── private-subnets.tf
+│   ├── private-subnets.tf    # Database subnets
 │   ├── providers.tf
-│   ├── rds.tf
-│   ├── route53.tf
-│   ├── secrets.tf
-│   ├── security-groups.tf
+│   ├── rds.tf                # PostgreSQL instance
+│   ├── route53.tf            # DNS record
+│   ├── secrets.tf            # Secrets Manager resources
+│   ├── security-groups.tf    # ALB, ECS and RDS security groups
 │   ├── variables.tf
-│   └── vpc.tf
-|
+│   └── vpc.tf                # VPC, public subnets, IGW, routes
 ├── Dockerfile
-├── docker-compose.local.yml
+├── docker-compose.local.yml  # Local Fider + PostgreSQL + MailHog + NGINX
 ├── nginx.conf
 ├── .dockerignore
 ├── .gitignore
 └── README.md
 ```
 
-The upstream Fider application source is kept under `fider/`, while the root of the repository contains the infrastructure, deployment and CI/CD configuration created for this project.
+The upstream Fider source lives under `fider/`. The repository root holds the infrastructure, deployment and CI/CD configuration created for this project.
 
-## AWS Infrastructure
+## AWS infrastructure
 
 ### Networking
 
-The application runs inside a custom AWS VPC.
+The application runs in a custom VPC containing:
 
-The network contains:
+- Two public subnets in separate Availability Zones for the ALB and ECS tasks
+- Two private subnets dedicated to Amazon RDS
+- An Internet Gateway and public route table
+- Separate security groups for the ALB, ECS tasks and RDS
 
-- Two public subnets across separate Availability Zones for the ECS/ALB layer
-- Two private database subnets for Amazon RDS
-- Internet Gateway
-- Public route table
-- Dedicated security groups for the ALB, ECS tasks and RDS
+Security groups restrict traffic layer by layer, so the database is never exposed to the internet:
 
-Security group traffic is restricted by application layer:
-
-```text
-Internet
-   |
-   | 80 / 443
-   v
-ALB Security Group
-   |
-   | TCP 3000
-   v
-ECS Security Group
-   |
-   | PostgreSQL 5432
-   v
-RDS Security Group
+```mermaid
+flowchart LR
+    net(["Internet"]) -->|"80, 443"| a["ALB<br/>security group"]
+    a -->|"TCP 3000"| e["ECS<br/>security group"]
+    e -->|"TCP 5432"| r["RDS<br/>security group"]
 ```
 
-The database is therefore not directly exposed to the public internet.
+### Amazon ECS / Fargate
 
-## Amazon ECS / Fargate
+Fider runs as a Fargate service with:
 
-Fider runs as a containerised workload on Amazon ECS using the Fargate launch type.
-
-The ECS task is configured with:
-
-- 1 vCPU
-- 2 GB memory
-- Container port `3000`
+- 1 vCPU and 2 GB memory
+- Container port 3000
 - CloudWatch logging
-- AWS Secrets Manager integration
+- Secrets injected from AWS Secrets Manager
 - Application environment variables
-- Application Load Balancer integration
+- Load balancer integration
 
-The ECS service maintains the desired application task and deploys new task definition revisions during CI/CD releases.
+The ECS service maintains the desired task count and rolls out new task definition revisions during CI/CD releases.
 
-## Amazon RDS
+### Amazon RDS
 
-The application uses PostgreSQL hosted by Amazon RDS.
+PostgreSQL runs in dedicated private subnets and accepts connections only from the ECS security group. Credentials are never hard-coded in the task definition; the connection string is retrieved from Secrets Manager at runtime.
 
-The database is deployed into dedicated private database subnets and only accepts PostgreSQL traffic from the ECS security group.
+### Secrets management
 
-Database credentials are not hard-coded into the ECS task definition. The application database connection string is retrieved from AWS Secrets Manager at runtime.
+The ECS task execution role retrieves `DATABASE_URL` and `JWT_SECRET` from AWS Secrets Manager. Secrets are never baked into the Docker image or committed to the repository.
 
-## Secrets Management
+### Load balancing, HTTPS and DNS
 
-Sensitive configuration is stored using AWS Secrets Manager.
-
-The ECS task retrieves:
-
-- `DATABASE_URL`
-- `JWT_SECRET`
-
-through the ECS task execution role.
-
-This prevents application secrets from being stored directly inside the Docker image or committed to the repository.
-
-## Application Load Balancer
-
-The Application Load Balancer provides the public entry point for Fider.
-
-Traffic flow:
-
-```text
-HTTP :80
-   |
-   v
-301 Redirect
-   |
-   v
-HTTPS :443
-   |
-   v
-Target Group
-   |
-   v
-Fider :3000
-```
-
-The target group uses the Fider health endpoint:
-
-```text
-/_health
-```
-
-to determine whether ECS tasks are healthy and able to receive traffic.
-
-## HTTPS and Custom Domain
-
-The application is available using the custom domain:
-
-```text
-https://fider.harrydev.net
-```
-
-AWS Certificate Manager provides the TLS certificate used by the HTTPS ALB listener.
-
-Route 53 provides DNS resolution and maps the Fider subdomain to the Application Load Balancer.
+- HTTP on port 80 returns a `301` redirect to HTTPS on port 443
+- The HTTPS listener uses an ACM certificate and forwards to the target group on port 3000
+- The target group health check uses `/_health`
+- Route 53 maps `fider.harrydev.net` to the load balancer
 
 ## Infrastructure as Code
 
-The AWS infrastructure is managed using Terraform.
+Terraform manages:
+
+- VPC, subnets, Internet Gateway, route tables and security groups
+- ECR repository, ECS cluster, baseline task definition and service
+- RDS, Application Load Balancer, target group and listeners
+- Route 53 record, ACM certificate, CloudWatch log group
+- Secrets Manager resources and ECS IAM permissions
 
 Typical workflow:
 
 ```bash
 cd terraform
-
 terraform fmt
 terraform validate
 terraform plan
 terraform apply
 ```
 
-Terraform manages the core infrastructure including:
-
-- VPC
-- Subnets
-- Internet Gateway
-- Route tables
-- Security groups
-- ECR repository
-- ECS cluster
-- ECS task definition baseline
-- ECS service
-- RDS
-- Application Load Balancer
-- Target group
-- ALB listeners
-- Route 53 record
-- CloudWatch log group
-- Secrets Manager resources
-- ECS IAM permissions
-
-After the infrastructure was imported and aligned with Terraform, the configuration reached:
+After the existing infrastructure was imported and aligned with the configuration, `terraform plan` reported no drift:
 
 ```text
 No changes. Your infrastructure matches the configuration.
 ```
 
-This provides a reproducible Infrastructure as Code baseline rather than relying on manual AWS console configuration.
+That gives a reproducible baseline instead of relying on manual console configuration.
 
-## CI/CD Pipeline
+## CI/CD pipeline
 
-Application deployments are automated using GitHub Actions.
+Every push to `main` triggers the GitHub Actions workflow in `.github/workflows/deploy.yml`:
 
-The deployment workflow is triggered by a push to the `main` branch.
+1. Authenticate to AWS using OIDC
+2. Build the Docker image
+3. Tag the image with the Git commit SHA
+4. Push the image to Amazon ECR
+5. Retrieve the current ECS task definition
+6. Replace the container image
+7. Register a new task definition revision
+8. Update the ECS service
+9. Wait for service stability
+10. Run the production health check
 
-```text
-Developer
-   |
-   | git push
-   v
-GitHub
-   |
-   v
-GitHub Actions
-   |
-   +--> Authenticate to AWS using OIDC
-   |
-   +--> Build Docker image
-   |
-   +--> Tag image using Git commit SHA
-   |
-   +--> Push image to Amazon ECR
-   |
-   +--> Retrieve current ECS task definition
-   |
-   +--> Replace container image
-   |
-   +--> Register new task definition revision
-   |
-   +--> Update ECS service
-   |
-   +--> Wait for service stability
-   |
-   +--> Run production health check
+Tagging with the commit SHA links every running deployment back to the exact source revision that produced it.
+
+### Keyless authentication with GitHub OIDC
+
+Instead of storing AWS access keys as GitHub secrets, the workflow exchanges a short-lived GitHub identity token for temporary AWS credentials:
+
+```mermaid
+sequenceDiagram
+    participant GA as GitHub Actions
+    participant OIDC as AWS IAM OIDC provider
+    participant Role as IAM deployment role
+    GA->>OIDC: Present OIDC token
+    OIDC->>Role: Validate trust policy (repository identity)
+    Role-->>GA: Temporary AWS credentials
 ```
 
-Using the Git commit SHA as the image tag provides traceability between a running ECS deployment and the source revision that produced it.
-
-## GitHub Actions and AWS OIDC
-
-The CI/CD pipeline uses GitHub's OpenID Connect integration with AWS.
-
-Instead of storing permanent AWS access keys as GitHub secrets, GitHub Actions requests a temporary identity token.
-
-```text
-GitHub Actions
-      |
-      | OIDC token
-      v
-AWS IAM OIDC Provider
-      |
-      v
-IAM Deployment Role
-      |
-      v
-Temporary AWS Credentials
-```
-
-The deployment role is restricted to the permissions required by the pipeline, including:
+The deployment role is limited to what the pipeline needs:
 
 - Push images to the Fider ECR repository
 - Read and register ECS task definitions
 - Update the Fider ECS service
 - Pass the ECS task execution role
 
-This removes the requirement for long-lived AWS credentials inside GitHub.
+### Terraform and CI/CD ownership
 
-## Terraform and CI/CD Ownership
-
-An important design consideration was preventing Terraform and GitHub Actions from competing over ECS task definition revisions.
-
-Terraform manages the ECS service infrastructure and establishes the baseline task definition.
-
-GitHub Actions manages application releases by registering new task definition revisions containing new Docker image versions.
-
-The Terraform ECS service therefore uses:
+Terraform and GitHub Actions must not fight over task definition revisions. Terraform owns the infrastructure and a baseline task definition. GitHub Actions owns application releases and registers new revisions with each new image. The ECS service therefore ignores task definition changes in Terraform:
 
 ```hcl
 lifecycle {
@@ -389,138 +227,48 @@ lifecycle {
 }
 ```
 
-This prevents a later `terraform apply` from rolling the ECS service back to an older application task revision deployed by Terraform.
+Without this, a later `terraform apply` could roll the service back to an older revision.
 
-The resulting responsibility model is:
+| Owner | Responsibility |
+| --- | --- |
+| Terraform | AWS infrastructure, ECS service, baseline task definition |
+| GitHub Actions | Application image, new task definition revisions, releases |
 
-```text
-Terraform
-   |
-   +--> AWS Infrastructure
-   +--> ECS Service
-   +--> Baseline Task Definition
+## Monitoring and health checks
 
-GitHub Actions
-   |
-   +--> Application Image
-   +--> New Task Definition Revisions
-   +--> Application Releases
-```
-
-## Monitoring and Health Checks
-
-Fider application logs are sent to:
-
-```text
-/ecs/fider
-```
-
-in Amazon CloudWatch Logs.
-
-The project uses the application endpoint:
-
-```text
-/_health
-```
-
-for both ALB target health checks and post-deployment CI/CD verification.
-
-A successful production check returns:
+- Container logs go to the `/ecs/fider` log group in CloudWatch Logs
+- `/_health` is used for both ALB target health checks and the post-deployment CI/CD check
+- A healthy response looks like this:
 
 ```json
 {"status":"Healthy"}
 ```
 
-This means a successful pipeline does more than push an image—it verifies that the newly deployed application is reachable and healthy.
+A green pipeline therefore means more than "an image was pushed": the new deployment is reachable and reporting healthy.
 
-## Troubleshooting and Lessons Learned
+## Troubleshooting and lessons learned
 
-### ECS Task Failed After Deployment
+| Problem | Symptom | Root cause and fix |
+| --- | --- | --- |
+| ECS task failed after deployment | `Essential container in task exited`, exit code 2 | CloudWatch Logs showed `failed to parse environment variables` and a missing `EMAIL_NOREPLY`. Comparing the working task definition with Terraform revealed the missing Fider email variables, which were then added to the Terraform task definition. Lesson: read the application logs before assuming an infrastructure fault. |
+| GitHub OIDC authentication failed | `Not authorized to perform sts:AssumeRoleWithWebIdentity` | The IAM trust relationship did not allow the GitHub repository identity. After correcting the trust policy, the workflow obtained temporary credentials without stored keys. |
+| Terraform and CI/CD task definition drift | Terraform detected a different task revision than its baseline | Once the pipeline registered its own revisions, Terraform saw drift. Adding `ignore_changes = [task_definition]` separated infrastructure lifecycle from application release lifecycle. |
 
-During implementation, the CI/CD pipeline successfully:
+## Local development
 
-- Authenticated to AWS
-- Built the Docker image
-- Pushed the image to ECR
-- Registered an ECS task definition
-
-However, the new ECS task exited with:
-
-```text
-Essential container in task exited
-Exit code: 2
-```
-
-CloudWatch Logs were used to identify the actual application error:
-
-```text
-failed to parse environment variables
-the environment variable "EMAIL_NOREPLY" is missing
-```
-
-The existing working ECS task definition was compared with the Terraform configuration. The missing Fider email environment variables were then added to the Terraform task definition.
-
-This demonstrated the importance of checking application logs rather than treating an ECS task failure as purely an infrastructure issue.
-
-### GitHub OIDC Authentication
-
-The first GitHub Actions deployment failed when attempting to assume the AWS IAM deployment role:
-
-```text
-Not authorized to perform sts:AssumeRoleWithWebIdentity
-```
-
-The IAM trust relationship was corrected so that the GitHub repository identity could assume the deployment role.
-
-After correcting the trust configuration, GitHub Actions successfully obtained temporary AWS credentials without requiring stored AWS access keys.
-
-### Terraform vs CI/CD Task Definition Drift
-
-Once GitHub Actions started registering new ECS task definition revisions, Terraform could detect a different task revision from its original baseline.
-
-The ECS service lifecycle configuration was updated so Terraform ignores application task revision changes.
-
-This established a clear separation between:
-
-- infrastructure lifecycle management
-- application deployment lifecycle management
-
-and prevents Terraform from unintentionally reverting a successful CI/CD release.
-
-## Local Development
-
-The application can also be run locally using Docker.
-
-The local environment includes:
-
-- Fider
-- PostgreSQL
-- MailHog
-- NGINX
-
-Build the application image:
+The local stack runs Fider, PostgreSQL, MailHog and an NGINX reverse proxy.
 
 ```bash
 docker build -t fider-app:local .
-```
-
-Start the local environment:
-
-```bash
 docker compose -f docker-compose.local.yml up -d
-```
-
-Check running containers:
-
-```bash
 docker ps
 ```
 
-The NGINX reverse proxy exposes the application locally over port `80`.
+NGINX exposes the application locally on port 80.
 
-## Deployment Verification
+## Deployment verification
 
-The production application health endpoint can be checked with:
+Check the production health endpoint:
 
 ```bash
 curl https://fider.harrydev.net/_health
@@ -532,7 +280,7 @@ Expected response:
 {"status":"Healthy"}
 ```
 
-ECS service status can also be checked using the AWS CLI:
+Check the ECS service:
 
 ```bash
 aws ecs describe-services \
@@ -543,75 +291,57 @@ aws ecs describe-services \
 
 ## Screenshots
 
-Screenshots can be added here to demonstrate the deployed infrastructure and pipeline.
+### Live Fider Application
+![Live Fider Application](./Images/livefiderapp.png)
 
-Suggested evidence:
+### Successful GitHub Actions Run
+![Successful GitHub Actions Run](./Images/Githubactionsrun.png)
 
-1. Live Fider application
-2. GitHub Actions successful deployment
-3. ECS service running
-4. ECS task definition
-5. Application Load Balancer target health
-6. ECR image repository
-7. RDS database
-8. Route 53 DNS record
-9. CloudWatch application logs
-10. Terraform plan showing no infrastructure drift
+### ECS Service and Task Definition
+![ECS Service and Task Definition](./Images/ecs-service.png)
 
-## Future Improvements
+### ALB Target Health
+![ALB Target Health](./Images/alb-target-health.png)
 
-Potential improvements to the project include:
+### ECR Repository
+![ECR Repository](./Images/ecr-repository.png)
 
-- Run ECS tasks in private subnets with controlled outbound connectivity
-- Add ECS Service Auto Scaling
-- Introduce remote Terraform state
-- Add Terraform state locking
-- Manage the GitHub OIDC IAM resources with Terraform
-- Add infrastructure security scanning to CI
-- Add container vulnerability scanning
-- Add automated application/integration testing before production deployment
-- Add CloudWatch alarms and SNS notifications
-- Add enhanced deployment strategies such as blue/green deployment
+### RDS Instance
+![RDS Instance](./Images/rds-instance.png)
 
-These are intentionally listed as future improvements rather than features already implemented.
+### Route 53 Record
+![Route 53 Record](./Images/route53-record.png)
 
-## Key Skills Demonstrated
+### CloudWatch Logs
+![CloudWatch Logs](./Images/cloudwatch-logs.png)
 
-This project demonstrates practical experience with:
+### Terraform Plan
+![Terraform Plan](./Images/terraform-plan.png)
 
-- AWS cloud infrastructure
-- Docker containerisation
-- Amazon ECS and Fargate
-- Infrastructure as Code with Terraform
-- Amazon RDS PostgreSQL
-- AWS networking and security groups
-- Application Load Balancers
-- HTTPS and TLS certificates
-- Route 53 DNS
-- AWS IAM
-- AWS Secrets Manager
-- CloudWatch troubleshooting
-- GitHub Actions
-- CI/CD pipelines
-- GitHub OIDC federation
-- Linux and command-line tooling
-- Git and GitHub
-- Production troubleshooting
+## Future improvements
 
-## Upstream Application
+These are planned, not yet implemented:
 
-This project uses **Fider**, an open-source customer feedback platform, as the application workload.
+- [ ] Run ECS tasks in private subnets with controlled outbound connectivity
+- [ ] Add ECS Service Auto Scaling
+- [ ] Introduce remote Terraform state with locking
+- [ ] Manage the GitHub OIDC IAM resources with Terraform
+- [ ] Add infrastructure security scanning and container vulnerability scanning to CI
+- [ ] Add automated application and integration tests before production deployment
+- [ ] Add CloudWatch alarms with SNS notifications
+- [ ] Move to blue/green deployments
 
-The upstream Fider source code and its original project documentation are retained under:
+## Skills demonstrated
 
-```text
-fider/
-```
+- **Cloud:** AWS networking, security groups, ECS/Fargate, RDS, ALB, ACM, Route 53, IAM, Secrets Manager
+- **Infrastructure as Code:** Terraform, importing existing resources, resolving state drift
+- **CI/CD:** GitHub Actions, OIDC federation, image tagging and release traceability
+- **Containers:** Docker, Amazon ECR
+- **Operations:** CloudWatch troubleshooting, health checks, production debugging
+- **Tooling:** Linux, command line, Git and GitHub
 
-The Fider source remains subject to its upstream licence, preserved in:
+## Upstream application
 
-```text
-fider/LICENSE
-```
+This project uses [Fider](https://github.com/getfider/fider), an open-source customer feedback platform, as the application workload. The upstream source and its original documentation are retained under `fider/`, and remain subject to the upstream licence in `fider/LICENSE`.
 
-This repository focuses on the containerisation, AWS infrastructure, Infrastructure as Code and CI/CD implementation surrounding the application.
+This repository focuses on the containerisation, AWS infrastructure, Infrastructure as Code and CI/CD around the application.
