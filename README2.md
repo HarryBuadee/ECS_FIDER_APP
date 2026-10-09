@@ -30,12 +30,11 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 
 ## Architecture
 
-### Runtime
+### Runtime and Deployment
 
-![Fider AWS Architecture Diagram](./images/fideronawsdiagaram.png)
+![Fider AWS Architecture Diagram](./Images/fideronawsdiagaram.png)
 
 
-### Deployment
 
 
 ## What this project covers
