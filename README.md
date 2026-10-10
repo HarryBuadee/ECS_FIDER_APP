@@ -270,28 +270,42 @@ aws ecs describe-services \
 
 ## Screenshots
 
-### Live Fider Application
-![Live Fider Application](./Images/livefiderapp.png)
 
-### Successful GitHub Actions Run
-![Successful GitHub Actions Run](./Images/Githubactionsrun.png)
+## Architecture
 
-### Live Fider Application
-![Live Fider Application](./Images/livefiderapp.png)
+![Fider AWS Architecture](./Images/fideronawsdiagaram.png)
 
-![Live Fider Application](./Images/livefiderapp2.png)
+## Deployment Screenshots
 
 ### Successful GitHub Actions Deployment
-![GitHub Actions Deployment](./Images/Githubactionsrun.png)
 
-### ECS Fargate Service
-![ECS Service](./Images/ecs-service.png)
+The GitHub Actions pipeline builds the Docker image, pushes it to Amazon ECR, deploys the application to ECS Fargate, and verifies application health.
 
-### Application Load Balancer Health
+![Successful GitHub Actions Deployment](./Images/Githubactionsrun.png)
+
+### Amazon ECS Fargate Service
+
+The ECS service shows one running task, zero pending tasks, and a successful deployment.
+
+![ECS Fargate Service](./Images/ecs-service.png)
+
+### Application Load Balancer Target Group
+
+The ALB target group uses HTTP on port 3000 and reports one healthy registered target.
+
+![ALB Target Group](./Images/alb-target-group.png)
+
+### Application Load Balancer Target Health
+
+The registered Fider ECS target is healthy and running in the eu-west-2b Availability Zone.
+
 ![ALB Target Health](./Images/alb-target-health.png)
 
-### CloudWatch Application Logs
-![CloudWatch Logs](./Images/cloudwatch-logs.png)
+### Amazon CloudWatch Logs
+
+CloudWatch collects application logs from the Fider ECS container for monitoring and troubleshooting.
+
+![CloudWatch Logs](./Images/Cloudwatchlogs.png)
 
 ## Skills demonstrated
 
