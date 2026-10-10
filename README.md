@@ -276,26 +276,22 @@ aws ecs describe-services \
 ### Successful GitHub Actions Run
 ![Successful GitHub Actions Run](./Images/Githubactionsrun.png)
 
-### ECS Service and Task Definition
-![ECS Service and Task Definition](./Images/ecs-service.png)
+### Live Fider Application
+![Live Fider Application](./Images/livefiderapp.png)
 
-### ALB Target Health
+![Live Fider Application](./Images/livefiderapp2.png)
+
+### Successful GitHub Actions Deployment
+![GitHub Actions Deployment](./Images/Githubactionsrun.png)
+
+### ECS Fargate Service
+![ECS Service](./Images/ecs-service.png)
+
+### Application Load Balancer Health
 ![ALB Target Health](./Images/alb-target-health.png)
 
-### ECR Repository
-![ECR Repository](./Images/ecr-repository.png)
-
-### RDS Instance
-![RDS Instance](./Images/rds-instance.png)
-
-### Route 53 Record
-![Route 53 Record](./Images/route53-record.png)
-
-### CloudWatch Logs
+### CloudWatch Application Logs
 ![CloudWatch Logs](./Images/cloudwatch-logs.png)
-
-### Terraform Plan
-![Terraform Plan](./Images/terraform-plan.png)
 
 ## Skills demonstrated
 
