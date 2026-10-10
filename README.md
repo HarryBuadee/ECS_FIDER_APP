@@ -6,7 +6,7 @@
 ![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/DB-RDS%20PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
-A production-style deployment of the open-source [Fider](https://github.com/getfider/fider) feedback platform on AWS. It covers the full lifecycle: local Docker, manual AWS deployment, Infrastructure as Code with Terraform, and an automated CI/CD pipeline that builds and ships every push to `main` to Amazon ECS Fargate using keyless GitHub OIDC authentication.
+A production-style deployment of the open-source [Fider](https://github.com/getfider/fider) feedback platform on AWS. It covers the full lifecycle: local Docker, manual AWS deployment, Infrastructure as Code with Terraform, and an automated CI/CD pipeline triggered by pushes to main, which builds and publishes Docker images to Amazon ECR, deploys updated task definitions to ECS Fargate, and verifies application health.
 
 **Live:** https://fider.harrydev.net
 
@@ -267,13 +267,6 @@ aws ecs describe-services \
   --services fider-service \
   --region eu-west-2
 ```
-
-## Screenshots
-
-
-## Architecture
-
-![Fider AWS Architecture](./Images/fideronawsdiagaram.png)
 
 ## Deployment Screenshots
 
