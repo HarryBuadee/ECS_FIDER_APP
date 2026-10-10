@@ -125,9 +125,15 @@ The ECS service maintains the desired task count and rolls out new task definiti
 
 PostgreSQL runs in dedicated private subnets and accepts connections only from the ECS security group. Credentials are never hard-coded in the task definition; the connection string is retrieved from Secrets Manager at runtime.
 
-### Secrets management
+### Secrets Management
 
-The ECS task execution role retrieves `DATABASE_URL` and `JWT_SECRET` from AWS Secrets Manager. Secrets are never baked into the Docker image or committed to the repository.
+AWS Secrets Manager securely stores sensitive application configuration, including:
+
+- PostgreSQL database connection string (`DATABASE_URL`)
+- JWT signing secret (`JWT_SECRET`)
+- Amazon SES SMTP password
+
+The ECS task execution role retrieves these secrets and injects them into the container at runtime. Sensitive values are not baked into the Docker image.
 
 ### Load balancing, HTTPS and DNS
 
