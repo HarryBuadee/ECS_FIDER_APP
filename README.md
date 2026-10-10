@@ -271,7 +271,9 @@ aws ecs describe-services \
 
 The following video demonstrates the Fider application deployed on AWS ECS Fargate and accessed through its custom HTTPS domain.
 
-<video src="./Images/Fiderappvideo.mp4" controls width="800"></video>
+
+[▶ Watch the Fider Application Demo](./Images/Fiderappvideo.mp4)
+
 
 ## Deployment Screenshots
 
