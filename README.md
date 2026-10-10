@@ -319,6 +319,28 @@ CloudWatch collects application logs from the Fider ECS container for monitoring
 
 ![CloudWatch Logs](./Images/Cloudwatchlogs.png)
 
+
+## Challenges and Troubleshooting
+
+### ECS Deployment Failures
+
+During development, an ECS deployment failed and triggered the deployment circuit breaker.
+
+Troubleshooting involved reviewing ECS service events, task deployment status, and CloudWatch application logs.
+
+### Secrets Manager Permissions
+
+The ECS task execution role required permissions to retrieve application secrets, including the Amazon SES SMTP password.
+
+The Terraform IAM configuration was updated to grant access to the required secret.
+
+### Lessons Learned
+
+- ECS task startup depends on correctly configured IAM permissions.
+- CloudWatch logs and ECS service events are essential troubleshooting tools.
+- Health checks help verify application availability after deployment.
+- Terraform and GitHub Actions need clearly defined infrastructure and application deployment responsibilities.
+
 ## Skills demonstrated
 
 - **Cloud:** AWS networking, security groups, ECS/Fargate, RDS, ALB, ACM, Route 53, IAM, Secrets Manager
