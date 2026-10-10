@@ -267,6 +267,11 @@ aws ecs describe-services \
   --services fider-service \
   --region eu-west-2
 ```
+## Live Application Demo
+
+The following video demonstrates the Fider application deployed on AWS ECS Fargate and accessed through its custom HTTPS domain.
+
+<video src="./Images/Fiderappvideo.mp4" controls width="800"></video>
 
 ## Deployment Screenshots
 
