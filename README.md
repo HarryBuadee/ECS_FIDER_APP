@@ -12,19 +12,23 @@ A production-style deployment of the open-source [Fider](https://github.com/getf
 
 ## Contents
 
-- [Architecture](#architecture)
-- [What this project covers](#what-this-project-covers)
-- [Technology stack](#technology-stack)
-- [Repository structure](#repository-structure)
-- [AWS infrastructure](#aws-infrastructure)
-- [Infrastructure as Code](#infrastructure-as-code)
-- [CI/CD pipeline](#cicd-pipeline)
-- [Monitoring and health checks](#monitoring-and-health-checks)
-- [Local development](#local-development)
-- [Deployment verification](#deployment-verification)
-- [Screenshots](#screenshots)
-- [Skills demonstrated](#skills-demonstrated)
-- [Upstream application](#upstream-application)
+## Contents
+
+1. [Architecture](#architecture)
+2. [What This Project Covers](#what-this-project-covers)
+3. [Technology Stack](#technology-stack)
+4. [Repository Structure](#repository-structure)
+5. [AWS Infrastructure](#aws-infrastructure)
+6. [Infrastructure as Code](#infrastructure-as-code)
+7. [CI/CD Pipeline](#cicd-pipeline)
+8. [Monitoring and Health Checks](#monitoring-and-health-checks)
+9. [Local Development](#local-development)
+10. [Deployment Verification](#deployment-verification)
+11. [Live Application Demo](#live-application-demo)
+12. [Deployment Screenshots](#deployment-screenshots)
+13. [Challenges and Troubleshooting](#challenges-and-troubleshooting)
+14. [Skills Demonstrated](#skills-demonstrated)
+15. [Upstream Application](#upstream-application)
 
 ## Architecture
 
